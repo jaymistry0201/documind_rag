@@ -1,0 +1,30 @@
+# Python environments
+.venv/
+.venv-backend/
+.venv-frontend/
+
+# Byte-compiled / cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# VS Code settings
+.vscode/
+
+# Temporary or Uploaded Files
+uploaded_pdfs/ 
+
+# Environment files
+.env
+*.env
+
+# OS files
+Thumbs.db
+
+# Streamlit cache
+.streamlit/
+
+# Build/Deploy
+*.log
+  
