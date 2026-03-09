@@ -139,15 +139,58 @@ async def upload_pdfs(files: List[UploadFile] = File(...)):
     return {"uploaded": uploaded}
 
 
+@app.delete("/delete_file/{file_id}")
+async def delete_file(file_id: str):
+    """Delete a file and its embeddings from the vector store."""
+    if file_id not in UPLOADED:
+        return {"error": "File not found"}
+    
+    # Remove from vector store
+    vector_store.remove_by_file_id(file_id)
+    
+    # Remove from UPLOADED tracking
+    file_info = UPLOADED.pop(file_id, None)
+    
+    # Delete physical file
+    if file_info and "path" in file_info:
+        try:
+            os.remove(file_info["path"])
+        except FileNotFoundError:
+            pass  # File already deleted
+    
+    return {"success": True, "message": f"File {file_info.get('filename', 'Unknown')} deleted"}
+
+
 @app.post("/query")
 async def query_doc(query: str = Form(...), top_k: int = Form(5)):
     """Query  uploaded PDFs using embeddings and return answer with citations."""
+    
+    # Check if any documents are uploaded
+    if len(UPLOADED) == 0:
+        return {
+            "error": "No documents have been uploaded yet. Please upload PDF files first before asking questions.",
+            "citations": [],
+            "suggestions": [
+                "Upload PDF files using the sidebar",
+                "Make sure files are successfully processed",
+                "Check that files appear in the Uploaded Documents section"
+            ]
+        }
+    
     # Generate embedding for the query
     q_emb = embedding_manager.embed_texts([query])[0]
     results = vector_store.query(q_emb, top_k=top_k)
 
     if not results:
-        return {"error": "No relevant chunks found for your query.", "citations": []}
+        return {
+            "error": "I couldn't find relevant information in your uploaded documents to answer this question. Please try:\n• Rephrasing your question with different keywords\n• Asking about topics that are covered in your PDFs\n• Uploading documents that contain information about your query",
+            "citations": [],
+            "suggestions": [
+                "Try more specific keywords from your documents",
+                "Check if your documents contain information about this topic",
+                "Upload relevant documents if needed"
+            ]
+        }
 
     # Build context and track citations
     context_texts = []

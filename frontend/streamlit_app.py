@@ -83,6 +83,31 @@ else:
         except requests.exceptions.RequestException as e:
             st.error(f"🚨 Error uploading PDFs: {e}")
 
+    # --------------------------------- Display Uploaded Files -------------------------------
+    if st.session_state['uploaded_file_ids']:
+        st.markdown("### 📄 Uploaded Documents:")
+        
+        for i, (file_id, filename) in enumerate(zip(st.session_state['uploaded_file_ids'], st.session_state['uploaded_file_names'])):
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.write(f"📑 {filename}")
+            with col2:
+                if st.button("🗑️", key=f"delete_{file_id}", help="Delete this document"):
+                    try:
+                        response = requests.delete(f"{BACKEND_URL}/delete_file/{file_id}")
+                        response.raise_for_status()
+                        
+                        # Remove from session state
+                        st.session_state['uploaded_file_ids'].pop(i)
+                        st.session_state['uploaded_file_names'].pop(i)
+                        
+                        st.success(f"Deleted {filename}")
+                        st.rerun()  # Refresh the UI
+                    except requests.exceptions.RequestException as e:
+                        st.error(f"Error deleting file: {e}")
+        
+        st.markdown("---")
+
     # ----------------------------------------- Q&A Interface -------------------------------
     # Text input for user query
     query = st.text_input("💬 Ask a question about the uploaded PDFs:", key="query_input")
@@ -126,7 +151,22 @@ else:
                         st.info("No citations found for this query.")
 
                 elif "error" in answer_data:
-                    st.error("❌ Backend Error: " + answer_data["error"])
+                    st.error("❌ " + answer_data["error"])
+                    
+                    # Show helpful suggestions if available
+                    if "suggestions" in answer_data:
+                        st.markdown("### 💡 Suggestions:")
+                        for suggestion in answer_data["suggestions"]:
+                            st.markdown(f"• {suggestion}")
+                    
+                    # Show tips for better queries
+                    st.markdown("### 🔍 Tips for Better Results:")
+                    st.markdown("""
+                    - **Use specific keywords** from your documents
+                    - **Try different phrasing** of your question
+                    - **Ask about topics** actually covered in your PDFs
+                    - **Upload relevant documents** for your questions
+                    """)
                 else:
                     st.warning("⚠️ Unexpected backend response format.")
 
