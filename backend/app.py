@@ -176,11 +176,14 @@ async def query_doc(query: str = Form(...), top_k: int = Form(5)):
     prompt = (
         "You are DocuMind — an intelligent assistant that answers questions based on PDF content.\n"
         "Use the provided CONTEXT to answer concisely (3–5 lines max).\n"
-        "When referencing a source, include only the page number in parentheses (e.g., [Page 8]).\n"
+        "When referencing a source, ONLY use page numbers that appear in the CONTEXT above.\n"
+        "Do NOT invent or hallucinate page numbers that are not explicitly shown in the context.\n"
+        "Each context item is numbered like [1], [2], etc. with actual page numbers in the text.\n"
+        "If no page number is shown in the context, don't include any page reference.\n"
         "Do not include file IDs or long UUIDs in the answer.\n\n"
         f"CONTEXT:\n{chr(10).join(context_texts)}\n\n"
         f"QUESTION: {query}\n\n"
-        "Answer clearly and factually."
+        "Answer clearly and factually using ONLY the information provided."
     )
 
     # Get answer from Gemini

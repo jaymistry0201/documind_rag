@@ -22,6 +22,6 @@ class FaissVectorStore:
         D, I = self.index.search(query_np, top_k)
         results = []
         for i, score in zip(I[0], D[0]):
-            if i < len(self.metas):
+            if i < len(self.metas) and i >= 0:
                 results.append((self.metas[i], score))
         return results
